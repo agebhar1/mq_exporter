@@ -1,0 +1,140 @@
+// Copyright 2021 Andreas Gebhardt
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"context"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
+	"github.com/prometheus/common/version"
+	"github.com/prometheus/exporter-toolkit/web"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
+)
+
+var name = "mq_exporter"
+
+var testListeningAddress chan net.Addr
+
+type appCtx struct {
+	logger log.Logger
+	sigs   chan os.Signal
+
+	webListenAddress *string
+	webTelemetryPath *string
+	webConfigFile    *string
+}
+
+func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer) *appCtx {
+
+	ctx := appCtx{}
+
+	var app = kingpin.New(name, "A Prometheus exporter for MQ metrics.")
+	ctx.webListenAddress = app.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9873").String()
+	ctx.webTelemetryPath = app.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
+	ctx.webConfigFile = app.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
+
+	app.UsageWriter(usageWriter)
+	app.ErrorWriter(errorWriter)
+	app.Version(version.Print(app.Name))
+	app.HelpFlag.Short('h')
+	app.VersionFlag.Short('v')
+
+	promlogConfig := &promlog.Config{}
+	flag.AddFlags(app, promlogConfig)
+
+	kingpin.MustParse(app.Parse(args))
+
+	ctx.logger = promlog.New(promlogConfig)
+
+	ctx.sigs = make(chan os.Signal)
+	signal.Notify(ctx.sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	return &ctx
+}
+
+func (app *appCtx) run() int {
+
+	logInfo := level.Info(app.logger).Log
+	logError := level.Error(app.logger).Log
+
+	logInfo("msg", "Starting", "app_name", name, "version", version.Version, "branch", version.Branch, "revision", version.Revision)
+	logInfo("msg", "Build context", "go", version.GoVersion, "build_user", version.BuildUser, "build_date", version.BuildDate)
+
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	reg.MustRegister(collectors.NewGoCollector())
+
+	handler := http.NewServeMux()
+	handler.Handle(*app.webTelemetryPath, promhttp.InstrumentMetricHandler(
+		reg, promhttp.HandlerFor(reg, promhttp.HandlerOpts{}),
+	))
+	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Write([]byte(`<html>
+			<head><title>MQ Exporter</title></head>
+			<body>
+			<h1>MQ Exporter</h1>
+			<p><a href='` + *app.webTelemetryPath + `'>Metrics</a></p>
+			</body>
+			</html>`))
+	})
+
+	server := &http.Server{
+		Addr:    *app.webListenAddress,
+		Handler: handler,
+	}
+
+	listener, err := net.Listen("tcp", server.Addr)
+	if err != nil {
+		logError("msg", "Listen error", "err", err)
+		return 1
+	}
+	logInfo("msg", "Listening on", "address", listener.Addr())
+	if testListeningAddress != nil {
+		testListeningAddress <- listener.Addr()
+	}
+
+	go func() {
+		<-app.sigs
+
+		logInfo("msg", "Shutdown server.")
+		server.Shutdown(context.Background())
+	}()
+
+	if err := web.Serve(listener, server, *app.webConfigFile, app.logger); err != http.ErrServerClosed {
+		logError("msg", "Serve error", "err", err)
+		return 1
+	}
+	return 0
+}
+
+func main() {
+	os.Exit(newAppCtx(os.Args[1:], os.Stdout, os.Stderr).run())
+}
