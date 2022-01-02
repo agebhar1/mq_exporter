@@ -1,0 +1,12 @@
+---
+queueManager: QM1
+user: app
+password: passw0rd
+connName: localhost(1414)
+channel: DEV.APP.SVRCONN
+sslCipherSpec: TLS_RSA_WITH_AES_256_CBC_SHA256
+keyRepository: keys/clientkey
+queues:
+  - DEV.QUEUE.1
+  - DEV.QUEUE.2
+  - DEV.QUEUE.3

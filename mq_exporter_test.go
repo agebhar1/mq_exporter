@@ -23,12 +23,14 @@ import (
 	"testing"
 )
 
+var configArg = "--config=fixtures/config-no-queues.yaml"
+
 func TestDefaultMetricsEndpoint(t *testing.T) {
 
 	testListeningAddress = make(chan net.Addr, 1)
 	defer close(testListeningAddress)
 
-	app := newAppCtx([]string{"--web.listen-address=:0"}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr)
 
 	go app.run()
 
@@ -75,7 +77,7 @@ func TestCustomMetricsEndpoint(t *testing.T) {
 	testListeningAddress = make(chan net.Addr, 1)
 	defer close(testListeningAddress)
 
-	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry"}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr)
 
 	go app.run()
 
@@ -112,7 +114,7 @@ func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 	testListeningAddress = make(chan net.Addr, 1)
 	defer close(testListeningAddress)
 
-	app := newAppCtx([]string{"--web.listen-address=:0"}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr)
 
 	go app.run()
 
@@ -149,7 +151,7 @@ func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 	testListeningAddress = make(chan net.Addr, 1)
 	defer close(testListeningAddress)
 
-	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry"}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr)
 
 	go app.run()
 

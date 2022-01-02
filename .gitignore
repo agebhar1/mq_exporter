@@ -3,3 +3,4 @@
 
 mq_exporter
 .go.*
+keys/

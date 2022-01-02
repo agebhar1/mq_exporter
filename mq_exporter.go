@@ -23,6 +23,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/agebhar1/mq_exporter/collector"
+	"github.com/agebhar1/mq_exporter/mq"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
@@ -43,6 +45,7 @@ type appCtx struct {
 	logger log.Logger
 	sigs   chan os.Signal
 
+	configFile       *string
 	webListenAddress *string
 	webTelemetryPath *string
 	webConfigFile    *string
@@ -53,6 +56,7 @@ func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer) *app
 	ctx := appCtx{}
 
 	var app = kingpin.New(name, "A Prometheus exporter for MQ metrics.")
+	ctx.configFile = app.Flag("config", "Path to config yaml file for MQ connections.").Required().String()
 	ctx.webListenAddress = app.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9873").String()
 	ctx.webTelemetryPath = app.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
 	ctx.webConfigFile = app.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
@@ -87,6 +91,15 @@ func (app *appCtx) run() int {
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	reg.MustRegister(collectors.NewGoCollector())
+
+	mqConnection, err := mq.NewMqConnection(app.logger, *app.configFile)
+	if err != nil {
+		logError("msg", err)
+		return 1
+	}
+
+	collector := collector.NewQueueCollector(app.logger, mqConnection.Timeout(), mqConnection.Queues())
+	reg.MustRegister(collector)
 
 	handler := http.NewServeMux()
 	handler.Handle(*app.webTelemetryPath, promhttp.InstrumentMetricHandler(
@@ -124,13 +137,15 @@ func (app *appCtx) run() int {
 	go func() {
 		<-app.sigs
 
+		mqConnection.Close()
+
 		logInfo("msg", "Shutdown server.")
 		server.Shutdown(context.Background())
 	}()
 
 	if err := web.Serve(listener, server, *app.webConfigFile, app.logger); err != http.ErrServerClosed {
 		logError("msg", "Serve error", "err", err)
-		return 1
+		return 2
 	}
 	return 0
 }

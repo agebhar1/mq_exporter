@@ -1,0 +1,10 @@
+---
+queueManager: QM1
+user: admin
+password: passw0rd
+connName: localhost(1414)
+channel: DEV.ADMIN.SVRCONN
+queues:
+  - DEV.QUEUE.1
+  - DEV.QUEUE.2
+  - DEV.QUEUE.3
