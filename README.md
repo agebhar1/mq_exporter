@@ -2,6 +2,12 @@
 
 Prometheus exporter for [IBM MQ](https://www.ibm.com/products/mq).
 
+# Alternatives/Products
+
+* https://github.com/Appdynamics/websphere-mq-monitoring-extension
+* https://github.com/Cinimex/mq-java-exporter
+* https://github.com/ibm-messaging/mq-metric-samples
+
 # License
 
 The repository and all contributions are licensed under
