@@ -1,0 +1,55 @@
+---
+name: Release
+
+on:
+  release:
+    types: released
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    name: Build Container Image
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout code
+
+      - name: Get current date and time
+        run: echo "now=$(date --rfc-3339=seconds | tr ' ' 'T')" >> $GITHUB_ENV
+
+      - name: Get Container tags
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION_MAJOR=$(echo ${{ github.ref_name }} | tr -d 'v' | cut -d'.' -f1)
+          VERSION_MINOR=$(echo ${{ github.ref_name }} | tr -d 'v' | cut -d'.' -f2)
+          echo "CONTAINER_TAGS=latest v${VERSION_MAJOR} v${VERSION_MAJOR}.${VERSION_MINOR} ${{ github.ref_name }}" >> $GITHUB_ENV
+
+      - name: Get Container tags
+        if: startsWith(github.ref, 'refs/heads/')
+        run: echo "CONTAINER_TAGS=main" >> $GITHUB_ENV
+
+      - name: Build Container Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: mq_exporter
+          tags: ${{ env.CONTAINER_TAGS }}
+          labels: |
+            org.opencontainers.image.created=${{ env.now }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            build-date=${{ env.now }}
+            version=${{ github.ref_name }}
+            vcs-ref=${{ github.sha }}
+          containerfiles: ./Containerfile
+
+      - name: Push to quay.io
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: quay.io/agebhar1
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}

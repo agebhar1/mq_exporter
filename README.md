@@ -5,6 +5,8 @@
 
 Prometheus exporter for [IBM MQ](https://www.ibm.com/products/mq).
 
+The container image is available on Red Hat's [quay.io](https://quay.io/repository/agebhar1/mq_exporter) container registry. See [Container](#container) section for more details.
+
 # Description
 
 This exporter is for use in a restricted environment where it's no possible to run [Programmable command formats (PCFs)](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=reference-programmable-command-formats-pcfs) and no other services exists such as [REST](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=mq-messaging-using-rest-api).
@@ -112,7 +114,7 @@ queues:
 ```
 
 Run with:
-```
+```bash
 $ mkdir keys && pushd $_
 $ openssl req -newkey rsa:2048 -nodes -keyout key.key -x509 -days 365 -out key.crt
 $ chmod g+rw key.key # otherwise it can't be read w/ podman
@@ -142,6 +144,30 @@ The project provides a `Makefile`. To run all tests and build the exporter call:
 ```
 $ make
 ```
+
+## Binary
+
+The binary of the `mq_exporter` will not be available since it's build with C GO and depends on the build time versions of underlying libraries beside of IBM MQ itself.
+
+## Container
+
+The container image is available on Red Hat's [quay.io](https://quay.io/repository/agebhar1/mq_exporter) container registry and does no contain the IBM MQ libraries because of the missing unawareness about the legal guidelines. The containers user is 'nobody' (UID: 65534).
+
+To run the container there are at least two options. Either build your own image like:
+```
+FROM quay.io/agebhar1/mq_exporter:<tag>
+
+COPY <mqm> /opt/mqm
+
+…
+```
+Or by mounting the library on start like:
+```bash
+$ podman run --rm -v $(pwd)/mqm:/opt/mqm -v $(pwd)/config.yml:/etc/mq_exporter/config.yml -p 9873:9873 quay.io/agebhar1/mq_exporter:latest
+…
+```
+
+The configuration file is expect to be `/etc/mq_exporter/config.yml` which can be mounted too.
 
 ## Links
 
