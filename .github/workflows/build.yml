@@ -1,0 +1,41 @@
+---
+name: Build Container Image and push to quay.io
+
+on:
+  push:
+    branches:
+      - "feature/container"
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    name: Build Container Image
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout code
+
+      - name: Get current date and time
+        run: echo "now=$(date --rfc-3339=seconds | tr ' ' 'T')" >> $GITHUB_ENV
+
+      - name: Build Container Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: mq_exporter
+          tags: latest
+          labels: |
+            org.opencontainers.image.created=${{ env.now }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
+            build-date=${{ env.now }}
+            version=${{ github.ref_name }}
+            vcs-ref=${{ github.sha }}
+          containerfiles: ./Containerfile
+
+      - name: Push to quay.io
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: quay.io/agebhar1
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
