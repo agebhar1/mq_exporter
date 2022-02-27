@@ -1,10 +1,10 @@
 ---
-name: CI/CD
+name: CI
 
 on: [push]
 
 jobs:
-  test-build-and:
+  test-and-build:
     runs-on: ubuntu-20.04
     container: registry.access.redhat.com/ubi8/ubi-minimal:8.5-230
     name: Test and Build
@@ -39,9 +39,3 @@ jobs:
       - name: Build
         run: |
           make
-
-      - uses: actions/cache@v2
-        name: Handle Cache for build artifacts
-        with:
-          path: mq_exporter
-          key: ${{ runner.os }}-artifacts-${{ github.sha }}
