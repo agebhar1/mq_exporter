@@ -6,7 +6,7 @@ on: [push]
 jobs:
   test-and-build:
     runs-on: ubuntu-20.04
-    container: registry.access.redhat.com/ubi8/ubi-minimal:8.5-230
+    container: registry.access.redhat.com/ubi8/ubi-minimal:8.5-230.1645809059
     name: Test and Build
     steps:
       - name: Install prerequisites
