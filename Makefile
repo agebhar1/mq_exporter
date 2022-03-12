@@ -18,6 +18,14 @@ FIXTURES := $(find -name "*fixture*" -type d -exec find {} -type f \;)
 export OARCH=amd64
 export GOOS=linux
 
+PKG := github.com/prometheus/common/version
+
+VERSION := -X '$(PKG).Version=$(shell git describe --exact-match --abbrev=0 2>/dev/null || echo "n/a")'
+BRANCH := -X '$(PKG).Branch=$(shell git rev-parse --abbrev-ref HEAD)'
+REVISION := -X '$(PKG).Revision=$(shell git rev-list -1 HEAD)'
+BUILD_USER := -X '$(PKG).BuildUser=$(shell whoami)@$(shell cat /etc/hostname)'
+BUILD_DATE := -X '$(PKG).BuildDate=$(shell date '+%Y%m%d-%H:%M:%S')'
+
 .PHONY: all
 all: mq_exporter
 
@@ -34,7 +42,7 @@ $(GO_TEST): $(GO_GET) $(MQ_LIB) $(SOURCE)
 	touch $@
 
 mq_exporter: $(GO_GET) $(GO_TEST) $(MQ_LIB) $(SOURCE)
-	go build
+	go build -ldflags="$(VERSION) $(BRANCH) $(REVISION) $(BUILD_USER) $(BUILD_DATE)"
 
 .PHONY: clean
 clean:
