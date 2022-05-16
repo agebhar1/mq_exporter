@@ -1,7 +1,7 @@
 module github.com/agebhar1/mq_exporter
 
 require (
-	github.com/go-kit/log v0.2.0
+	github.com/go-kit/log v0.2.1
 	github.com/google/go-cmp v0.5.8
 	github.com/ibm-messaging/mq-golang/v5 v5.2.5
 	github.com/prometheus/client_golang v1.12.2
