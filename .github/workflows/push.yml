@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        go: [ '1.16', '1.17', '1.18' ]
+        go: [ '1.17', '1.18', '1.19' ]
     container: registry.access.redhat.com/ubi8/ubi-minimal:8.6-902
     name: Test and Build
     steps:
