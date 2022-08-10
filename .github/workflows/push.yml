@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         go: [ '1.16', '1.17', '1.18' ]
-    container: registry.access.redhat.com/ubi8/ubi-minimal:8.6-854
+    container: registry.access.redhat.com/ubi8/ubi-minimal:8.6-902
     name: Test and Build
     steps:
       - name: Install prerequisites
