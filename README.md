@@ -1,6 +1,7 @@
 # MQ metrics for Prometheus
 
 [![CI](https://github.com/agebhar1/mq_exporter/actions/workflows/push.yml/badge.svg)](https://github.com/agebhar1/mq_exporter/actions/workflows/push.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/agebhar1/mq_exporter)](https://goreportcard.com/report/github.com/agebhar1/mq_exporter)
 
 Prometheus exporter for [IBM MQ](https://www.ibm.com/products/mq).
 
