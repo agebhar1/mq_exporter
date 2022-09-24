@@ -1,0 +1,21 @@
+---
+name: Check Dependency (not covered by Dependabot)
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+
+jobs:
+  check-is-latest:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout code
+
+      - name: Check RedHat UBI8 Minimal Container Version
+        run: |
+          CURRENT=$(grep --only-matching --no-filename 'ubi-minimal:[0-9][0-9.-]*' -R . | uniq | cut -d':' -f2)
+          LATEST=$(curl --silent 'https://catalog.redhat.com/api/containers/v1/repositories/registry/registry.access.redhat.com/repository/ubi8-minimal/images?page_size=500&page=0&exclude=data.repositories.comparison,data.brew,data.cpe_ids,data.top_layer_id' | jq  -r '[ .data[] | select(.architecture == "amd64") | select(.repositories[].tags[].name == "latest") | .repositories[].tags[].name | select(contains("latest") | not) ] | unique | sort_by(length) | reverse | .[0]')
+
+          echo "test: ${CURRENT} = ${LATEST}"
+          test ${CURRENT} = ${LATEST}
