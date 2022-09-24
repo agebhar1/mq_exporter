@@ -79,7 +79,7 @@ The queue configuration file is passed by `--config` and is required. It's a YAM
 † if `user` is provided, then `password` is required and will be used; if `user` is absent then authentication will not be used <br>
 ‡ if `sslCipherSpec` is provided, then `keyRepository` is required and will be used; `sslCipherSpec` is absent TLS will not be used for MQ connection
 
-An example for IBMs provided [Container](https://hub.docker.com/r/ibmcom/mq/) with the default [developer config](https://github.com/ibm-messaging/mq-container/blob/master/docs/developer-config.md) is:
+An example for IBMs provided Container `icr.io/ibm-messaging/mq:latest` with the default [developer config](https://github.com/ibm-messaging/mq-container/blob/master/docs/developer-config.md) is:
 ```
 ---
 queueManager: QM1
@@ -124,7 +124,7 @@ $ podman run --rm \
     --env MQ_QMGR_NAME=QM1 \
     --publish 1414:1414 \
     --volume $(pwd)/keys:/etc/mqm/pki/keys/mykey \
-    docker.io/ibmcom/mq
+    icr.io/ibm-messaging/mq
 ```
 
 ## TLS and basic authentication
