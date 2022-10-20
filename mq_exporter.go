@@ -17,7 +17,6 @@ package main
 import (
 	"context"
 	"io"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -34,32 +33,29 @@ import (
 	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
+	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var name = "mq_exporter"
-
-var testListeningAddress chan net.Addr
 
 type appCtx struct {
 	logger log.Logger
 	sigs   chan os.Signal
 
 	configFile       *string
-	webListenAddress *string
+	toolkitFlags     *web.FlagConfig
 	webTelemetryPath *string
-	webConfigFile    *string
 }
 
-func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer) *appCtx {
+func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer, logger log.Logger) *appCtx {
 
 	ctx := appCtx{}
 
 	var app = kingpin.New(name, "A Prometheus exporter for MQ metrics.")
 	ctx.configFile = app.Flag("config", "Path to config yaml file for MQ connections.").Required().String()
-	ctx.webListenAddress = app.Flag("web.listen-address", "Address on which to expose metrics and web interface.").Default(":9873").String()
+	ctx.toolkitFlags = webflag.AddFlags(app, ":9873")
 	ctx.webTelemetryPath = app.Flag("web.telemetry-path", "Path under which to expose metrics.").Default("/metrics").String()
-	ctx.webConfigFile = app.Flag("web.config", "Path to config yaml file that can enable TLS or authentication.").Default("").String()
 
 	app.UsageWriter(usageWriter)
 	app.ErrorWriter(errorWriter)
@@ -72,7 +68,11 @@ func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer) *app
 
 	kingpin.MustParse(app.Parse(args))
 
-	ctx.logger = promlog.New(promlogConfig)
+	if logger != nil {
+		ctx.logger = logger
+	} else {
+		ctx.logger = promlog.New(promlogConfig)
+	}
 
 	ctx.sigs = make(chan os.Signal)
 	signal.Notify(ctx.sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -119,20 +119,7 @@ func (app *appCtx) run() int {
 			</html>`))
 	})
 
-	server := &http.Server{
-		Addr:    *app.webListenAddress,
-		Handler: handler,
-	}
-
-	listener, err := net.Listen("tcp", server.Addr)
-	if err != nil {
-		logError("msg", "Listen error", "err", err)
-		return 1
-	}
-	logInfo("msg", "Listening on", "address", listener.Addr())
-	if testListeningAddress != nil {
-		testListeningAddress <- listener.Addr()
-	}
+	server := &http.Server{Handler: handler}
 
 	go func() {
 		<-app.sigs
@@ -143,7 +130,7 @@ func (app *appCtx) run() int {
 		server.Shutdown(context.Background())
 	}()
 
-	if err := web.Serve(listener, server, *app.webConfigFile, app.logger); err != http.ErrServerClosed {
+	if err := web.ListenAndServe(server, app.toolkitFlags, app.logger); err != http.ErrServerClosed {
 		logError("msg", "Serve error", "err", err)
 		return 2
 	}
@@ -151,5 +138,5 @@ func (app *appCtx) run() int {
 }
 
 func main() {
-	os.Exit(newAppCtx(os.Args[1:], os.Stdout, os.Stderr).run())
+	os.Exit(newAppCtx(os.Args[1:], os.Stdout, os.Stderr, nil).run())
 }

@@ -16,7 +16,6 @@ package main
 
 import (
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -25,18 +24,40 @@ import (
 
 var configArg = "--config=fixtures/config-no-queues.yaml"
 
+type listenAddrListener struct {
+	c chan (string)
+}
+
+func (l listenAddrListener) Log(keyvals ...interface{}) error {
+	if len(keyvals) == 6 && keyvals[3].(string) == "Listening on" {
+		addr := keyvals[5].(string)
+		l.c <- addr
+	}
+	return nil
+}
+
+func (l listenAddrListener) addr() string {
+	return <-l.c
+}
+
+func (l listenAddrListener) close() {
+	close(l.c)
+}
+
+func newListenAddrListener() listenAddrListener {
+	return listenAddrListener{c: make(chan string, 1)}
+}
+
 func TestDefaultMetricsEndpoint(t *testing.T) {
 
-	testListeningAddress = make(chan net.Addr, 1)
-	defer close(testListeningAddress)
+	l := newListenAddrListener()
+	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr, l)
 
 	go app.run()
 
-	addr := <-testListeningAddress
-
-	resp, err := http.Get("http://" + addr.String() + "/metrics")
+	resp, err := http.Get("http://" + l.addr() + "/metrics")
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,16 +95,14 @@ func TestDefaultMetricsEndpoint(t *testing.T) {
 
 func TestCustomMetricsEndpoint(t *testing.T) {
 
-	testListeningAddress = make(chan net.Addr, 1)
-	defer close(testListeningAddress)
+	l := newListenAddrListener()
+	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l)
 
 	go app.run()
 
-	addr := <-testListeningAddress
-
-	resp, err := http.Get("http://" + addr.String() + "/telemetry")
+	resp, err := http.Get("http://" + l.addr() + "/telemetry")
 	if err != nil {
 		t.Error(err)
 	}
@@ -111,16 +130,14 @@ func TestCustomMetricsEndpoint(t *testing.T) {
 
 func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 
-	testListeningAddress = make(chan net.Addr, 1)
-	defer close(testListeningAddress)
+	l := newListenAddrListener()
+	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr, l)
 
 	go app.run()
 
-	addr := <-testListeningAddress
-
-	resp, err := http.Get("http://" + addr.String() + "/")
+	resp, err := http.Get("http://" + l.addr() + "/")
 	if err != nil {
 		t.Error(err)
 	}
@@ -148,16 +165,14 @@ func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 
 func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 
-	testListeningAddress = make(chan net.Addr, 1)
-	defer close(testListeningAddress)
+	l := newListenAddrListener()
+	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr)
+	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l)
 
 	go app.run()
 
-	addr := <-testListeningAddress
-
-	resp, err := http.Get("http://" + addr.String() + "/")
+	resp, err := http.Get("http://" + l.addr() + "/")
 	if err != nil {
 		t.Error(err)
 	}
