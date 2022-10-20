@@ -49,16 +49,17 @@ usage: mq_exporter --config=CONFIG [<flags>]
 A Prometheus exporter for MQ metrics.
 
 Flags:
-  -h, --help               Show context-sensitive help (also try --help-long and --help-man).
-      --config=CONFIG      Path to config yaml file for MQ connections.
-      --web.listen-address=":9873"  
-                           Address on which to expose metrics and web interface.
+  -h, --help                Show context-sensitive help (also try --help-long and --help-man).
+      --config=CONFIG       Path to config yaml file for MQ connections.
+      --web.systemd-socket  Use systemd socket activation listeners instead of port listeners (Linux only).
+      --web.listen-address=:9873 ...
+                            Addresses on which to expose metrics and web interface. Repeatable for multiple addresses.
+      --web.config.file=""  [EXPERIMENTAL] Path to configuration file that can enable TLS or authentication.
       --web.telemetry-path="/metrics"  
-                           Path under which to expose metrics.
-      --web.config=""      Path to config yaml file that can enable TLS or authentication.
-  -v, --version            Show application version.
-      --log.level=info     Only log messages with the given severity or above. One of: [debug, info, warn, error]
-      --log.format=logfmt  Output format of log messages. One of: [logfmt, json]
+                            Path under which to expose metrics.
+  -v, --version             Show application version.
+      --log.level=info      Only log messages with the given severity or above. One of: [debug, info, warn, error]
+      --log.format=logfmt   Output format of log messages. One of: [logfmt, json]
 ```
 
 ## Queue configuration
