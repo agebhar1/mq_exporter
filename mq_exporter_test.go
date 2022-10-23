@@ -15,7 +15,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -71,7 +71,7 @@ func TestDefaultMetricsEndpoint(t *testing.T) {
 		t.Error("HTTP status code does not match.")
 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)
 	}
@@ -116,7 +116,7 @@ func TestCustomMetricsEndpoint(t *testing.T) {
 		t.Error("HTTP status code does not match.")
 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)
 	}
@@ -151,7 +151,7 @@ func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 		t.Error("HTTP status code does not match.")
 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)
 	}
@@ -186,7 +186,7 @@ func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 		t.Error("HTTP status code does not match.")
 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)
 	}
