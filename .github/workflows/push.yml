@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-20.04
     name: assure unique »ubi-minimal« container in repository
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout code
 
       - name: Check constraint
@@ -27,7 +27,7 @@ jobs:
       - name: Install prerequisites
         run: microdnf install tar gzip findutils gcc make
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout code
 
       - uses: actions/setup-go@v2
