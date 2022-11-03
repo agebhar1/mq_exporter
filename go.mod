@@ -4,7 +4,7 @@ require (
 	github.com/go-kit/log v0.2.1
 	github.com/google/go-cmp v0.5.9
 	github.com/ibm-messaging/mq-golang/v5 v5.3.2
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/prometheus/common v0.37.0
 	github.com/prometheus/exporter-toolkit v0.8.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
