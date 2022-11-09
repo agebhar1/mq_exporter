@@ -5,7 +5,7 @@ on: [push]
 
 jobs:
   assure-unique-container:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: assure unique »ubi-minimal« container in repository
     steps:
       - uses: actions/checkout@v3
@@ -16,7 +16,7 @@ jobs:
           test 1 -eq $(grep --only-matching --no-filename 'ubi-minimal:[0-9][0-9.-]*' -R . | uniq | wc -l)
 
   test-and-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         go: [ '1.17', '1.18', '1.19' ]
