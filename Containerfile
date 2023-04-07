@@ -48,7 +48,7 @@ LABEL \
     org.opencontainers.image.licenses="Apache-2.0" \
     org.opencontainers.image.title="mq_exporter" \
     org.opencontainers.image.description="Prometheus exporter for IBM MQ" \
-    org.opencontainers.image.base.name="registry.access.redhat.com/ubi8/ubi-minimal:8.7-11070"
+    org.opencontainers.image.base.name="registry.access.redhat.com/ubi8/ubi-minimal:8.7-1107"
 
 EXPOSE 9873
 
