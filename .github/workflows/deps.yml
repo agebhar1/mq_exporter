@@ -19,3 +19,11 @@ jobs:
 
           echo "test: ${CURRENT} = ${LATEST}"
           test ${CURRENT} = ${LATEST}
+
+      - name: Check if latest (stable) Go release is used
+        run: |
+          CURRENT=$(grep --perl-regexp --only-matching --no-filename '/dl/go[0-9.]+.linux-amd64.tar.gz' . -R)
+          LATEST=$(curl --silent 'https://go.dev/dl/' | grep --perl-regexp --only-matching '(?<=href=")/dl/go[0-9.]+.linux-amd64.tar.gz(?=")' | head -n 1)
+
+          echo "test: ${CURRENT} = ${LATEST}"
+          test ${CURRENT} = ${LATEST}
