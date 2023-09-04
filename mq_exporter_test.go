@@ -53,7 +53,7 @@ func TestDefaultMetricsEndpoint(t *testing.T) {
 	l := newListenAddrListener()
 	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr, l)
+	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l)
 
 	go app.run()
 
