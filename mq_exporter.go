@@ -89,8 +89,9 @@ func (app *appCtx) run() int {
 	logInfo("msg", "Build context", "go", version.GoVersion, "build_user", version.BuildUser, "build_date", version.BuildDate)
 
 	reg := prometheus.NewRegistry()
-	reg.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	reg.MustRegister(version.NewCollector(name))
 	reg.MustRegister(collectors.NewGoCollector())
+	reg.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 
 	mqConnection, err := mq.NewMqConnection(app.logger, *app.configFile)
 	if err != nil {

@@ -17,18 +17,18 @@ More or less only the metrics of current queue depth `MQIA_CURRENT_Q_DEPTH` and 
 
 ## Metrics
 
-| Metric                              | Type  | [MQINQ attribute selector](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=calls-mqinq-inquire-object-attributes) | Description |
-| ----------------------------------- | ----- | -------------------------| - |
-| `mq_queue_current_depth`            | gauge | MQIA_CURRENT_Q_DEPTH     | Number of messages on queue |
-| `mq_queue_max_depth`                | gauge | MQIA_MAX_Q_DEPTH         | Maximum number of messages allowed on queue |
-| `mq_queue_open_input_count`         | gauge | MQIA_OPEN_INPUT_COUNT    | Number of `MQOPEN` calls that have the queue open for input |
-| `mq_queue_open_output_count`        | gauge | MQIA_OPEN_OUTPUT_COUNT   | Number of `MQOPEN` calls that have the queue open |
-| `mq_queue_request_duration_seconds` | gauge |                        - | Response time of `MQINQ` in seconds |
-| `mq_queue_up`                       | gauge |                        - | `1` if `MQINQ` was successful and within timeout, `0` otherwise |
+| Metric                              | Type  | [MQINQ attribute selector](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=calls-mqinq-inquire-object-attributes) | Description                                                     |
+|-------------------------------------|-------|----------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
+| `mq_queue_current_depth`            | gauge | MQIA_CURRENT_Q_DEPTH                                                                                           | Number of messages on queue                                     |
+| `mq_queue_max_depth`                | gauge | MQIA_MAX_Q_DEPTH                                                                                               | Maximum number of messages allowed on queue                     |
+| `mq_queue_open_input_count`         | gauge | MQIA_OPEN_INPUT_COUNT                                                                                          | Number of `MQOPEN` calls that have the queue open for input     |
+| `mq_queue_open_output_count`        | gauge | MQIA_OPEN_OUTPUT_COUNT                                                                                         | Number of `MQOPEN` calls that have the queue open               |
+| `mq_queue_request_duration_seconds` | gauge | -                                                                                                              | Response time of `MQINQ` in seconds                             |
+| `mq_queue_up`                       | gauge | -                                                                                                              | `1` if `MQINQ` was successful and within timeout, `0` otherwise |
 
 Each metric contains the labels `channel`, `connection`, (queue) `name` and `queue_manager`.
 
-Beside the above metrics, metrics for Go runtime is also provided by Prometheus go client collector.
+Beside the above metrics, metrics for Go runtime is also provided by Prometheus go client collector and build info `mq_exporter_build_info`.
 
 ## Links
 
@@ -68,17 +68,17 @@ Flags:
 
 The queue configuration file is passed by `--config` and is required. It's a YAML with these attributes:
 
-| Attribute           | Required | Description |
-| --------------      | :---: | - |
-| `queueManager`      | ✓ | name of the queue manager |
-| `user` †            |   | username for channel authentication |
-| `password` †        |   | password for channel authentication |
-| `connName `         | ✓ | host and port of MQ server |
-| `channel `          | ✓ | channel to connect to queues |
-| `sslCipherSpec` ‡   |   | [Cipher Spec](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=fields-sslcipherspec-mqchar32) which is used for TLS |
-| `keyRepository` ‡   |   | location of [key repository](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=mqsco-keyrepository-mqchar256) |
-| `timeout`           |   | timeout to inquire **all** queue metrics |
-| `queues`            |   | (string) list of (full) queue names |
+| Attribute         | Required | Description                                                                                                     |
+|-------------------|:--------:|-----------------------------------------------------------------------------------------------------------------|
+| `queueManager`    |    ✓     | name of the queue manager                                                                                       |
+| `user` †          |          | username for channel authentication                                                                             |
+| `password` †      |          | password for channel authentication                                                                             |
+| `connName `       |    ✓     | host and port of MQ server                                                                                      |
+| `channel `        |    ✓     | channel to connect to queues                                                                                    |
+| `sslCipherSpec` ‡ |          | [Cipher Spec](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=fields-sslcipherspec-mqchar32) which is used for TLS |
+| `keyRepository` ‡ |          | location of [key repository](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=mqsco-keyrepository-mqchar256)        |
+| `timeout`         |          | timeout to inquire **all** queue metrics                                                                        |
+| `queues`          |          | (string) list of (full) queue names                                                                             |
 
 † if `user` is provided, then `password` is required and will be used; if `user` is absent then authentication will not be used <br>
 ‡ if `sslCipherSpec` is provided, then `keyRepository` is required and will be used; `sslCipherSpec` is absent TLS will not be used for MQ connection

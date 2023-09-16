@@ -18,6 +18,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -193,6 +194,49 @@ func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 
 	if !strings.Contains(string(responseBody), "<a href='/telemetry'>Metrics</a>") {
 		t.Errorf("Want link to custom metrics endpoint. But found none in:\n%s", string(responseBody))
+	}
+
+	app.sigs <- os.Interrupt
+}
+
+func TestBuildInfoMetric(t *testing.T) {
+
+	l := newListenAddrListener()
+	defer l.close()
+
+	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l)
+
+	go app.run()
+
+	resp, err := http.Get("http://" + l.addr() + "/metrics")
+	if err != nil {
+		t.Error(err)
+	}
+
+	defer resp.Body.Close()
+
+	statusCode := 200
+	if resp.StatusCode != statusCode {
+		t.Log("expected:", statusCode)
+		t.Log("     got:", resp.StatusCode)
+		t.Error("HTTP status code does not match.")
+	}
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Error(err)
+	}
+
+	body := string(responseBody)
+
+	want := "HELP mq_exporter_build_info A metric with a constant '1' value labeled by version, revision, branch, goversion from which mq_exporter was built, and the goos and goarch for the build."
+	if !strings.Contains(body, want) {
+		t.Errorf("Want response body to contains '%s'. But found none in:\n%s", want, body)
+	}
+
+	var goBuildInfo = regexp.MustCompile(`mq_exporter_build_info{branch="[^"]*",goarch="[^"]*",goos="[^"]*",goversion="[^"]*",revision="[^"]*",tags="[^"]*",version="[^"]*"} 1`)
+	if !goBuildInfo.MatchString(body) {
+		t.Errorf("Want response body to contains RegEx '%s'. But found none in:\n%s", goBuildInfo.String(), body)
 	}
 
 	app.sigs <- os.Interrupt
