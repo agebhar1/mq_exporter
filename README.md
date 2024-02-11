@@ -84,7 +84,7 @@ The queue configuration file is passed by `--config` and is required. It's a YAM
 ‡ if `sslCipherSpec` is provided, then `keyRepository` is required and will be used; `sslCipherSpec` is absent TLS will not be used for MQ connection
 
 An example for IBMs provided Container `icr.io/ibm-messaging/mq:latest` with the default [developer config](https://github.com/ibm-messaging/mq-container/blob/master/docs/developer-config.md) is:
-```
+```yaml
 ---
 queueManager: QM1
 user: admin
@@ -98,7 +98,7 @@ queues:
 ```
 
 An example with IBM MQ [encrypted connection ](https://developer.ibm.com/tutorials/mq-secure-msgs-tls/):
-```
+```yaml
 ---
 queueManager: QM1
 user: app
@@ -114,7 +114,7 @@ queues:
 ```
 
 Run with:
-```bash
+```shell
 $ mkdir keys && pushd $_
 $ openssl req -newkey rsa:2048 -nodes -keyout key.key -x509 -days 365 -out key.crt
 $ chmod g+rw key.key # otherwise it can't be read w/ podman
@@ -141,7 +141,7 @@ To build the project the IBM client library is necessary due to the use of the `
 
 The project provides a `Makefile`. To run all tests and build the exporter call:
 
-```
+```shell
 $ make
 ```
 
@@ -154,7 +154,7 @@ The binary of the `mq_exporter` will not be available since it's build with C GO
 The container image is available on Red Hat's [quay.io](https://quay.io/repository/agebhar1/mq_exporter) container registry and does no contain the IBM MQ libraries because of the missing unawareness about the legal guidelines. The containers user is 'nobody' (UID: 65534).
 
 To run the container there are at least two options. Either build your own image like:
-```
+```dockerfile
 FROM quay.io/agebhar1/mq_exporter:<tag>
 
 COPY <mqm> /opt/mqm
@@ -162,7 +162,7 @@ COPY <mqm> /opt/mqm
 …
 ```
 Or by mounting the library on start like:
-```bash
+```shell
 $ podman run --rm -v $(pwd)/mqm:/opt/mqm -v $(pwd)/config.yml:/etc/mq_exporter/config.yml -p 9873:9873 quay.io/agebhar1/mq_exporter:latest
 …
 ```
