@@ -6,7 +6,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/ibm-messaging/mq-golang/v5 v5.5.3
 	github.com/prometheus/client_golang v1.18.0
-	github.com/prometheus/common v0.46.0
+	github.com/prometheus/common v0.47.0
 	github.com/prometheus/exporter-toolkit v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.5.1
