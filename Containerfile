@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1052 AS builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1052.1724178568 AS builder
 WORKDIR /go/src/github/agebhar1/mq_exporter
 RUN microdnf install tar gzip findutils gcc make git \
     && mkdir /opt/mqm && curl -L https://ibm.biz/IBM-MQC-Redist-LinuxX64targz | tar xzf - -C /opt/mqm/ \
@@ -21,7 +21,7 @@ RUN microdnf install tar gzip findutils gcc make git \
 COPY . ./
 RUN PATH=$PATH:/opt/go/bin make
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1052
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1052.1724178568
 WORKDIR /opt/mq_exporter
 COPY --from=builder /go/src/github/agebhar1/mq_exporter/mq_exporter ./
 
@@ -48,7 +48,7 @@ LABEL \
     org.opencontainers.image.licenses="Apache-2.0" \
     org.opencontainers.image.title="mq_exporter" \
     org.opencontainers.image.description="Prometheus exporter for IBM MQ" \
-    org.opencontainers.image.base.name="registry.access.redhat.com/ubi8/ubi-minimal:8.10-1052"
+    org.opencontainers.image.base.name="registry.access.redhat.com/ubi8/ubi-minimal:8.10-1052.1724178568"
 
 EXPOSE 9873
 
