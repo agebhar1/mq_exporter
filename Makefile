@@ -38,7 +38,7 @@ $(GO_GET): $(MQ_LIB) go.mod go.sum
 	touch $@
 
 $(GO_TEST): $(GO_GET) $(MQ_LIB) $(SOURCE)
-	go test -v ./...
+	go test -v -race ./...
 	touch $@
 
 mq_exporter: $(GO_GET) $(GO_TEST) $(MQ_LIB) $(SOURCE)
