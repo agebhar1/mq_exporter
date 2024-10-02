@@ -16,7 +16,7 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10-1086 AS builder
 WORKDIR /go/src/github/agebhar1/mq_exporter
 RUN microdnf install tar gzip findutils gcc make git \
     && mkdir /opt/mqm && curl -L https://ibm.biz/IBM-MQC-Redist-LinuxX64targz | tar xzf - -C /opt/mqm/ \
-    && curl -L https://go.dev/dl/go1.23.1.linux-amd64.tar.gz | tar xzf - -C /opt
+    && curl -L https://go.dev/dl/go1.23.2.linux-amd64.tar.gz | tar xzf - -C /opt
 
 COPY . ./
 RUN PATH=$PATH:/opt/go/bin make
