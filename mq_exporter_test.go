@@ -16,6 +16,7 @@ package main
 
 import (
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"regexp"
@@ -26,15 +27,8 @@ import (
 var configArg = "--config=fixtures/config-no-queues.yaml"
 
 type listenAddrListener struct {
-	c chan (string)
-}
-
-func (l listenAddrListener) Log(keyvals ...interface{}) error {
-	if len(keyvals) == 6 && keyvals[3].(string) == "Listening on" {
-		addr := keyvals[5].(string)
-		l.c <- addr
-	}
-	return nil
+	logger *slog.Logger
+	c      chan string
 }
 
 func (l listenAddrListener) addr() string {
@@ -46,7 +40,20 @@ func (l listenAddrListener) close() {
 }
 
 func newListenAddrListener() listenAddrListener {
-	return listenAddrListener{c: make(chan string, 1)}
+
+	c := make(chan string, 1)
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == "address" {
+				c <- a.Value.String()
+			}
+			return a
+		},
+	}))
+
+	return listenAddrListener{logger: logger, c: c}
 }
 
 func TestDefaultMetricsEndpoint(t *testing.T) {
@@ -54,7 +61,7 @@ func TestDefaultMetricsEndpoint(t *testing.T) {
 	l := newListenAddrListener()
 	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l)
+	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l.logger)
 
 	go app.run()
 
@@ -99,7 +106,7 @@ func TestCustomMetricsEndpoint(t *testing.T) {
 	l := newListenAddrListener()
 	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l)
+	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l.logger)
 
 	go app.run()
 
@@ -134,7 +141,7 @@ func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 	l := newListenAddrListener()
 	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr, l)
+	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr, l.logger)
 
 	go app.run()
 
@@ -169,7 +176,7 @@ func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 	l := newListenAddrListener()
 	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l)
+	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l.logger)
 
 	go app.run()
 
@@ -204,7 +211,7 @@ func TestBuildInfoMetric(t *testing.T) {
 	l := newListenAddrListener()
 	defer l.close()
 
-	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l)
+	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l.logger)
 
 	go app.run()
 

@@ -16,14 +16,13 @@ package mq
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/agebhar1/mq_exporter/collector"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/ibm-messaging/mq-golang/v5/ibmmq"
 	"gopkg.in/yaml.v2"
 )
@@ -113,12 +112,12 @@ func (cfg *MqConfiguration) validateReadFromYaml() error {
 type MqConnection struct {
 	isConnecting *int64
 	cfg          *MqConfiguration
-	logger       log.Logger
+	logger       *slog.Logger
 	qMgr         ibmmq.MQQueueManager
 	queues       map[string]ibmmq.MQObject
 }
 
-func NewMqConnection(logger log.Logger, cfgFilename string) (*MqConnection, error) {
+func NewMqConnection(logger *slog.Logger, cfgFilename string) (*MqConnection, error) {
 
 	cfg, err := readConfigYaml(cfgFilename)
 	if err != nil {
@@ -131,7 +130,7 @@ func NewMqConnection(logger log.Logger, cfgFilename string) (*MqConnection, erro
 	c := MqConnection{
 		isConnecting: new(int64),
 		cfg:          cfg,
-		logger:       log.WithSuffix(logger, "connName", cfg.ConnName, "channel", cfg.Channel, "queueManager", cfg.QueueManager),
+		logger:       logger.With("connName", cfg.ConnName, "channel", cfg.Channel, "queueManager", cfg.QueueManager),
 	}
 	*c.isConnecting = NO
 
@@ -150,7 +149,7 @@ func (c *MqConnection) connect() error {
 	}
 	defer func() {
 		atomic.StoreInt64(c.isConnecting, NO)
-		level.Info(c.logger).Log("msg", "connected to queue manager")
+		c.logger.Info("connected to queue manager")
 	}()
 
 	if len(c.cfg.Queues) > 0 {
@@ -208,7 +207,7 @@ func (c *MqConnection) handleReturnValue(mqret *ibmmq.MQReturn) {
 		go func() {
 			err := c.connect()
 			if err != nil {
-				level.Error(c.logger).Log("msg", "failed re-connect", "err", err)
+				c.logger.Error("failed re-connect", "err", err)
 			}
 		}()
 	}
@@ -240,7 +239,7 @@ func (c *MqConnection) Queues() []collector.Queue {
 			Metadata: metadata,
 			Reader: &MqQueue{
 				connection: c,
-				logger:     log.WithSuffix(c.logger, "queue", queue),
+				logger:     c.logger.With("queue", queue),
 				metadata:   metadata,
 			},
 		})
@@ -249,23 +248,19 @@ func (c *MqConnection) Queues() []collector.Queue {
 }
 
 func (c *MqConnection) Close() {
-
-	logInfo := level.Info(c.logger).Log
-	logError := level.Error(c.logger).Log
-
 	for _, queue := range c.queues {
 		err := queue.Close(0)
 		if err == nil {
-			logInfo("msg", "closed queue", "queue", queue.Name)
+			c.logger.Info("closed queue", "queue", queue.Name)
 		} else {
-			logError("msg", "failed to close queue", "err", err, "queue", queue.Name)
+			c.logger.Error("failed to close queue", "err", err, "queue", queue.Name)
 		}
 	}
 	err := c.qMgr.Disc()
 	if err == nil {
-		logInfo("msg", "disconnected from queue manager")
+		c.logger.Info("disconnected from queue manager")
 	} else {
-		logError("msg", "failed to disconnect from queue manager", "err", err)
+		c.logger.Error("failed to disconnect from queue manager", "err", err)
 	}
 }
 
@@ -275,7 +270,7 @@ func (c *MqConnection) Timeout() time.Duration {
 
 type MqQueue struct {
 	connection *MqConnection
-	logger     log.Logger
+	logger     *slog.Logger
 	metadata   collector.QueueMetadata
 }
 
@@ -284,7 +279,7 @@ func (q *MqQueue) Read() (collector.QueueMetrics, error) {
 	values, err := q.connection.inqQueue(q, selectors)
 	if err != nil {
 		err := err.(*ibmmq.MQReturn)
-		level.Error(q.logger).Log("msg", "error inquire queue", "err", err, "mqcc", err.MQCC, "mqcr", err.MQRC)
+		q.logger.Error("error inquire queue", "err", err, "mqcc", err.MQCC, "mqcr", err.MQRC)
 		return collector.QueueMetrics{}, err
 	}
 	return collector.QueueMetrics{

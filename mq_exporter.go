@@ -17,7 +17,10 @@ package main
 import (
 	"context"
 	versionc "github.com/prometheus/client_golang/prometheus/collectors/version"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,13 +29,9 @@ import (
 	"github.com/agebhar1/mq_exporter/collector"
 	"github.com/agebhar1/mq_exporter/mq"
 	"github.com/alecthomas/kingpin/v2"
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/promlog"
-	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"github.com/prometheus/exporter-toolkit/web"
 	webflag "github.com/prometheus/exporter-toolkit/web/kingpinflag"
@@ -41,7 +40,7 @@ import (
 var name = "mq_exporter"
 
 type appCtx struct {
-	logger log.Logger
+	logger *slog.Logger
 	sigs   chan os.Signal
 
 	configFile       *string
@@ -49,7 +48,7 @@ type appCtx struct {
 	webTelemetryPath *string
 }
 
-func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer, logger log.Logger) *appCtx {
+func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer, logger *slog.Logger) *appCtx {
 
 	ctx := appCtx{}
 
@@ -64,15 +63,15 @@ func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer, logg
 	app.HelpFlag.Short('h')
 	app.VersionFlag.Short('v')
 
-	promlogConfig := &promlog.Config{}
-	flag.AddFlags(app, promlogConfig)
+	promslogConfig := &promslog.Config{Style: promslog.GoKitStyle}
+	flag.AddFlags(app, promslogConfig)
 
 	kingpin.MustParse(app.Parse(args))
 
 	if logger != nil {
 		ctx.logger = logger
 	} else {
-		ctx.logger = promlog.New(promlogConfig)
+		ctx.logger = promslog.New(promslogConfig)
 	}
 
 	ctx.sigs = make(chan os.Signal)
@@ -83,11 +82,8 @@ func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer, logg
 
 func (app *appCtx) run() int {
 
-	logInfo := level.Info(app.logger).Log
-	logError := level.Error(app.logger).Log
-
-	logInfo("msg", "Starting", "app_name", name, "version", version.Version, "branch", version.Branch, "revision", version.Revision)
-	logInfo("msg", "Build context", "go", version.GoVersion, "build_user", version.BuildUser, "build_date", version.BuildDate)
+	app.logger.Info("Starting", "app_name", name, "version", version.Version, "branch", version.Branch, "revision", version.Revision)
+	app.logger.Info("Build context", "go", version.GoVersion, "build_user", version.BuildUser, "build_date", version.BuildDate)
 
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(versionc.NewCollector(name))
@@ -96,7 +92,7 @@ func (app *appCtx) run() int {
 
 	mqConnection, err := mq.NewMqConnection(app.logger, *app.configFile)
 	if err != nil {
-		logError("msg", err)
+		app.logger.Error(err.Error())
 		return 1
 	}
 
@@ -128,12 +124,12 @@ func (app *appCtx) run() int {
 
 		mqConnection.Close()
 
-		logInfo("msg", "Shutdown server.")
+		app.logger.Info("Shutdown server.")
 		server.Shutdown(context.Background())
 	}()
 
 	if err := web.ListenAndServe(server, app.toolkitFlags, app.logger); err != http.ErrServerClosed {
-		logError("msg", "Serve error", "err", err)
+		app.logger.Error("Serve error", "err", err)
 		return 2
 	}
 	return 0

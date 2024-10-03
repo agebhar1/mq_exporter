@@ -16,11 +16,10 @@ package collector
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
-	"github.com/go-kit/log"
-	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -56,7 +55,7 @@ type QueueMetrics struct {
 
 type QueueCollector struct {
 	sync.Mutex
-	logger  log.Logger
+	logger  *slog.Logger
 	timeout time.Duration
 	queues  []Queue
 
@@ -77,7 +76,7 @@ func (m *QueueMetadata) prometheusLabelValues() []string {
 	}
 }
 
-func NewQueueCollector(logger log.Logger, timeout time.Duration, queues []Queue) *QueueCollector {
+func NewQueueCollector(logger *slog.Logger, timeout time.Duration, queues []Queue) *QueueCollector {
 
 	newQueueMetric := func(name string, help string) *prometheus.GaugeVec {
 		return prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -150,7 +149,7 @@ func (c *QueueCollector) Collect(ch chan<- prometheus.Metric) {
 	c.requestDuration.Collect(ch)
 }
 
-func collect(logger log.Logger, timeout time.Duration, queues []Queue, ctx context.Context) *[]QueueMetrics {
+func collect(logger *slog.Logger, timeout time.Duration, queues []Queue, ctx context.Context) *[]QueueMetrics {
 
 	metrics := make([]QueueMetrics, 0)
 
@@ -176,11 +175,11 @@ func collect(logger log.Logger, timeout time.Duration, queues []Queue, ctx conte
 	for {
 		select {
 		case metric := <-ch:
-			level.Debug(logger).Log("msg", "Got queue metrics", "queue", metric.Metadata.QueueName, "connection", metric.Metadata.ConnectionName, "queue_manager", metric.Metadata.QMgrName, "channel", metric.Metadata.ChannelName)
+			logger.Debug("Got queue metrics", "queue", metric.Metadata.QueueName, "connection", metric.Metadata.ConnectionName, "queue_manager", metric.Metadata.QMgrName, "channel", metric.Metadata.ChannelName)
 			metrics = append(metrics, metric)
 		case <-ctx.Done():
 			if ctx.Err() == context.DeadlineExceeded {
-				level.Error(logger).Log("msg", "Deadline exceeded while waiting for queue metrics", "timeout", timeout)
+				logger.Error("Deadline exceeded while waiting for queue metrics", "timeout", timeout)
 			}
 			return &metrics
 		}

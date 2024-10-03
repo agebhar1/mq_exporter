@@ -17,18 +17,19 @@ package collector
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/google/go-cmp/cmp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
-var logger = log.NewNopLogger()
+var logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 type succeedingQueueMetricReader struct {
 	value QueueMetrics
