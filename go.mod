@@ -3,7 +3,7 @@ module github.com/agebhar1/mq_exporter
 require (
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/google/go-cmp v0.6.0
-	github.com/ibm-messaging/mq-golang/v5 v5.6.0
+	github.com/ibm-messaging/mq-golang/v5 v5.6.1
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.1
 	github.com/prometheus/exporter-toolkit v0.13.0
