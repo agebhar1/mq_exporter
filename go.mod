@@ -8,7 +8,7 @@ require (
 	github.com/prometheus/common v0.62.0
 	github.com/prometheus/exporter-toolkit v0.14.0
 	gopkg.in/yaml.v2 v2.4.0
-	gotest.tools/v3 v3.5.1
+	gotest.tools/v3 v3.5.2
 )
 
 require (
