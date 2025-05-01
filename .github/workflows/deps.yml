@@ -1,6 +1,8 @@
 ---
 name: Check Dependency (not covered by Dependabot)
 
+permissions: {}
+
 on:
   schedule:
     - cron: '0 4 * * *'
