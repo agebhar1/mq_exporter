@@ -9,15 +9,15 @@ The container image is available on Red Hat's [quay.io](https://quay.io/reposito
 
 # Description
 
-This exporter is for use in a restricted environment where it's no possible to run [Programmable command formats (PCFs)](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=reference-programmable-command-formats-pcfs) and no other services exists such as [REST](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=mq-messaging-using-rest-api).
+This exporter is for use in a restricted environment where it's no possible to run [Programmable command formats (PCFs)](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=reference-programmable-command-formats-pcfs) and no other services exists such as [REST](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=mq-messaging-using-rest-api).
 
-To use the exporter only the `inquire` permission for the given queues are required to execute [MQINQ](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=calls-mqinq-inquire-object-attributes).
+To use the exporter only the `inquire` permission for the given queues are required to execute [MQINQ](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=calls-mqinq-inquire-object-attributes).
 
 More or less only the metrics of current queue depth `MQIA_CURRENT_Q_DEPTH` and maximum queue size `MQIA_MAX_Q_DEPTH` are (currently) supported as effect of not using PCFs. To run the exporter you need the IB MQ client library for C. The exporter itself is written in [Go](https://go.dev/) and uses IBMs [mq-golang](https://github.com/ibm-messaging/mq-golang) library, a Go binding to the C client library.
 
 ## Metrics
 
-| Metric                              | Type  | [MQINQ attribute selector](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=calls-mqinq-inquire-object-attributes) | Description                                                     |
+| Metric                              | Type  | [MQINQ attribute selector](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=calls-mqinq-inquire-object-attributes) | Description                                                     |
 |-------------------------------------|-------|----------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
 | `mq_queue_current_depth`            | gauge | MQIA_CURRENT_Q_DEPTH                                                                                           | Number of messages on queue                                     |
 | `mq_queue_max_depth`                | gauge | MQIA_MAX_Q_DEPTH                                                                                               | Maximum number of messages allowed on queue                     |
@@ -32,7 +32,7 @@ Beside the above metrics, metrics for Go runtime is also provided by Prometheus 
 
 ## Links
 
-- [Authorizations for PCF commands](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=windows-authorizations-pcf-commands)
+- [Authorizations for PCF commands](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=windows-authorizations-pcf-commands)
 - [Get started with the IBM MQ messaging REST API](https://developer.ibm.com/tutorials/mq-develop-mq-rest-api/)
 
 ## Alternatives/Products
@@ -68,17 +68,17 @@ Flags:
 
 The queue configuration file is passed by `--config` and is required. It's a YAML with these attributes:
 
-| Attribute         | Required | Description                                                                                                     |
-|-------------------|:--------:|-----------------------------------------------------------------------------------------------------------------|
-| `queueManager`    |    ✓     | name of the queue manager                                                                                       |
-| `user` †          |          | username for channel authentication                                                                             |
-| `password` †      |          | password for channel authentication                                                                             |
-| `connName `       |    ✓     | host and port of MQ server                                                                                      |
-| `channel `        |    ✓     | channel to connect to queues                                                                                    |
-| `sslCipherSpec` ‡ |          | [Cipher Spec](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=fields-sslcipherspec-mqchar32) which is used for TLS |
-| `keyRepository` ‡ |          | location of [key repository](https://www.ibm.com/docs/en/ibm-mq/9.2?topic=mqsco-keyrepository-mqchar256)        |
-| `timeout`         |          | timeout to inquire **all** queue metrics                                                                        |
-| `queues`          |          | (string) list of (full) queue names                                                                             |
+| Attribute         | Required | Description                                                                                                                           |
+|-------------------|:--------:|---------------------------------------------------------------------------------------------------------------------------------------|
+| `queueManager`    |    ✓     | name of the queue manager                                                                                                             |
+| `user` †          |          | username for channel authentication                                                                                                   |
+| `password` †      |          | password for channel authentication                                                                                                   |
+| `connName `       |    ✓     | host and port of MQ server                                                                                                            |
+| `channel `        |    ✓     | channel to connect to queues                                                                                                          |
+| `sslCipherSpec` ‡ |          | [Cipher Spec](https://www.ibm.com/docs/en/ibm-mq/9.4?topic=fields-sslcipherspec-mqchar32) which is used for TLS                       |
+| `keyRepository` ‡ |          | location of [key repository](https://www.ibm.com/docs/en/ibm-mq/9.4.x?topic=options-field-details-mqsco#q099825___q099920___title__1) |
+| `timeout`         |          | timeout to inquire **all** queue metrics                                                                                              |
+| `queues`          |          | (string) list of (full) queue names                                                                                                   |
 
 † if `user` is provided, then `password` is required and will be used; if `user` is absent then authentication will not be used <br>
 ‡ if `sslCipherSpec` is provided, then `keyRepository` is required and will be used; `sslCipherSpec` is absent TLS will not be used for MQ connection
