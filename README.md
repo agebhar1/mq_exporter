@@ -122,13 +122,19 @@ $ # openssl x509 -text -noout -in key.crt
 $ runmqakm -keydb -create -db clientkey.kdb -pw [!!pick_a_passw0rd_here!!] -type pkcs12 -stash
 $ runmqakm -cert -add -label QM1.cert -db clientkey.kdb -stashed -trust enable -file key.crt
 $ popd
+$ printf "passw0rd" | podman secret create mqAdminPassword -
+$ printf "passw0rd" | podman secret create mqAppPassword -
 $ podman run --rm \
+    --secret mqAdminPassword \
+    --secret mqAppPassword \
     --env LICENSE=accept \
-    --env MQ_APP_PASSWORD=passw0rd \
     --env MQ_QMGR_NAME=QM1 \
     --publish 1414:1414 \
+    --publish 9443:9443 \
+    --detach \
+    --name QM1 \
     --volume $(pwd)/keys:/etc/mqm/pki/keys/mykey \
-    icr.io/ibm-messaging/mq
+    icr.io/ibm-messaging/mq:latest
 ```
 
 ## TLS and basic authentication
