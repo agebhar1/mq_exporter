@@ -23,7 +23,7 @@ jobs:
     if: startsWith(github.ref, 'refs/heads/')
     strategy:
       matrix:
-        go: [ '1.23', '1.24' ]
+        go: [ '1.23', '1.24', '1.25' ]
     container: registry.access.redhat.com/ubi8/ubi-minimal:8.10-1295.1749680713
     name: Test and Build w/ Go v${{ matrix.go }}
     needs: assure-unique-container
