@@ -1,11 +1,11 @@
 ---
 name: Release
 
-permissions: {}
+permissions: { }
 
 on:
   release:
-    types: released
+    types: [ released ]
   push:
     branches:
       - main
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     name: Build Container Image
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: Checkout code
 
       - name: Get current date and time

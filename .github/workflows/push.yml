@@ -1,7 +1,7 @@
 ---
 name: CI
 
-permissions: {}
+permissions: { }
 
 on: push
 
@@ -11,7 +11,7 @@ jobs:
     if: startsWith(github.ref, 'refs/heads/')
     name: assure unique »ubi-minimal« container in repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: Checkout code
 
       - name: Check constraint
@@ -31,7 +31,7 @@ jobs:
       - name: Install prerequisites
         run: microdnf install tar gzip findutils gcc make
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: Checkout code
 
       - uses: actions/setup-go@v5
