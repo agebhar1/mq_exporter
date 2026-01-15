@@ -1,5 +1,5 @@
 ---
-name: Check Dependency (not covered by Dependabot)
+name: Check/Update Dependency (not covered by Dependabot)
 
 permissions: { }
 
@@ -7,25 +7,62 @@ on:
   schedule:
     - cron: '0 4 * * *'
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   check-is-latest:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
-        name: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
 
-      - name: Check RedHat UBI8 Minimal Container Version
+      - name: Setup Git
         run: |
-          CURRENT=$(grep --only-matching --no-filename 'ubi-minimal:[0-9][0-9.-]*' -R . | uniq | cut -d':' -f2)
+          # https://api.github.com/users/github-actions%5Bbot%5D
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+
+      - name: Check/Update RedHat UBI8 Minimal Container Version
+        if: always()
+        run: |
+          # cat .github/workflows/deps.yml | yq .jobs.check-is-latest.steps[2].run | bash
+          . .github/scripts/deps.sh
+
+          function update() {
+            local CURRENT="$1"
+            local LATEST="$2"
+            local FILES=$(grep ubi-minimal:${CURRENT} --recursive --files-with-matches --exclude-dir=.git)
+
+            sed "s,ubi-minimal:${CURRENT},ubi-minimal:${LATEST},g" --in-place ${FILES}
+            echo "${FILES}"
+          }
+
+          CURRENT=$(grep --only-matching --no-filename 'ubi-minimal:[0-9][0-9.-]*' --recursive | uniq | cut -d':' -f2)
           LATEST=$(curl --silent 'https://catalog.redhat.com/api/containers/v1/repositories/registry/registry.access.redhat.com/repository/ubi8-minimal/images?page_size=500&page=0&exclude=data.repositories.comparison,data.brew,data.cpe_ids,data.top_layer_id' | jq  -r '[ .data[] | select(.architecture == "amd64") | select(.repositories[].tags[].name == "latest") | .repositories[].tags[].name | select(contains("latest") | not) ] | unique | sort_by(length) | reverse | .[0]')
 
-          echo "test: ${CURRENT} = ${LATEST}"
-          test ${CURRENT} = ${LATEST}
+          call_update_and_push_if_required "${CURRENT}" "${LATEST}" "autofix/deps/ubi-minimal-${CURRENT}" "chore: update container »ubi8/ubi-minimal« to ${LATEST}"
 
-      - name: Check if latest (stable) Go release is used
+      - name: Check/Update latest (stable) Go release
+        if: always()
         run: |
-          CURRENT=$(grep --perl-regexp --only-matching --no-filename '/dl/go[0-9.]+.linux-amd64.tar.gz' . -R)
-          LATEST=$(curl --silent 'https://go.dev/dl/' | grep --perl-regexp --only-matching '(?<=href=")/dl/go[0-9.]+.linux-amd64.tar.gz(?=")' | head -n 1)
+          # cat .github/workflows/deps.yml | yq .jobs.check-is-latest.steps[3].run | bash
+          . .github/scripts/deps.sh
 
-          echo "test: ${CURRENT} = ${LATEST}"
-          test ${CURRENT} = ${LATEST}
+          function update() {
+            local CURRENT="$1"
+            local LATEST="$2"
+            local FILES=$(grep https://go.dev/dl/go${CURRENT}.linux-amd64.tar.gz --recursive --files-with-matches --exclude-dir=.git)
+
+            sed "s,https://go.dev/dl/go${CURRENT}.linux-amd64.tar.gz,https://go.dev/dl/go${LATEST}.linux-amd64.tar.gz,g" --in-place ${FILES}
+            echo "${FILES}"
+          }
+
+          CURRENT=$(grep --perl-regexp --only-matching --no-filename --exclude-dir=.git '(?<=/dl/go)[0-9.]+(?=\.linux-amd64\.tar\.gz)' --recursive)
+          LATEST=$(curl --silent 'https://go.dev/dl/' | grep --perl-regexp --only-matching '(?<=href="/dl/go)[0-9.]+(?=\.linux-amd64\.tar\.gz)' | head -n 1)
+
+          call_update_and_push_if_required "${CURRENT}" "${LATEST}" "autofix/deps/go-${CURRENT}" "build: update to Go ${LATEST}"
