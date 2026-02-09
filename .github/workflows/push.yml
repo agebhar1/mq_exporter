@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         go: [ '1.24', '1.25' ]
-    container: registry.access.redhat.com/ubi8/ubi-minimal:8.10-1770223153
+    container: registry.access.redhat.com/ubi8/ubi-minimal:8.10-1770597478
     name: Test and Build w/ Go v${{ matrix.go }}
     needs: assure-unique-container
     steps:
