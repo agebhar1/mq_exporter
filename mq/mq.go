@@ -218,7 +218,7 @@ func (c *MqConnection) resolveQueue(q *MqQueue) ibmmq.MQObject {
 	return c.queues[q.metadata.QueueName]
 }
 
-func (c *MqConnection) inqQueue(q *MqQueue, goSelectors []int32) (map[int32]interface{}, error) {
+func (c *MqConnection) inqQueue(q *MqQueue, goSelectors []int32) (map[int32]any, error) {
 	values, err := c.resolveQueue(q).Inq(goSelectors)
 	if err != nil {
 		go c.handleReturnValue(err.(*ibmmq.MQReturn))
