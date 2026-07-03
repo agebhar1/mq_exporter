@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -126,7 +127,7 @@ func (app *appCtx) run(ctx context.Context) int {
 		}
 	}()
 
-	if err := web.ListenAndServe(server, app.toolkitFlags, app.logger); err != http.ErrServerClosed {
+	if err := web.ListenAndServe(server, app.toolkitFlags, app.logger); !errors.Is(err, http.ErrServerClosed) {
 		app.logger.Error("Serve error", "err", err)
 		return 2
 	}
