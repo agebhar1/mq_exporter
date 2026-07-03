@@ -16,15 +16,16 @@ package main
 
 import (
 	"context"
-	versionc "github.com/prometheus/client_golang/prometheus/collectors/version"
-	"github.com/prometheus/common/promslog"
-	"github.com/prometheus/common/promslog/flag"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	versionc "github.com/prometheus/client_golang/prometheus/collectors/version"
+	"github.com/prometheus/common/promslog"
+	"github.com/prometheus/common/promslog/flag"
 
 	"github.com/agebhar1/mq_exporter/collector"
 	"github.com/agebhar1/mq_exporter/mq"
@@ -41,7 +42,6 @@ var name = "mq_exporter"
 
 type appCtx struct {
 	logger *slog.Logger
-	sigs   chan os.Signal
 
 	configFile       *string
 	toolkitFlags     *web.FlagConfig
@@ -74,13 +74,10 @@ func newAppCtx(args []string, usageWriter io.Writer, errorWriter io.Writer, logg
 		ctx.logger = promslog.New(promslogConfig)
 	}
 
-	ctx.sigs = make(chan os.Signal)
-	signal.Notify(ctx.sigs, syscall.SIGINT, syscall.SIGTERM)
-
 	return &ctx
 }
 
-func (app *appCtx) run() int {
+func (app *appCtx) run(ctx context.Context) int {
 
 	app.logger.Info("Starting", "app_name", name, "version", version.Version, "branch", version.Branch, "revision", version.Revision)
 	app.logger.Info("Build context", "go", version.GoVersion, "build_user", version.BuildUser, "build_date", version.BuildDate)
@@ -120,12 +117,13 @@ func (app *appCtx) run() int {
 	server := &http.Server{Handler: handler}
 
 	go func() {
-		<-app.sigs
+		select {
+		case <-ctx.Done():
+			mqConnection.Close()
 
-		mqConnection.Close()
-
-		app.logger.Info("Shutdown server.")
-		server.Shutdown(context.Background())
+			app.logger.Info("Shutdown server.")
+			server.Shutdown(context.Background())
+		}
 	}()
 
 	if err := web.ListenAndServe(server, app.toolkitFlags, app.logger); err != http.ErrServerClosed {
@@ -136,5 +134,8 @@ func (app *appCtx) run() int {
 }
 
 func main() {
-	os.Exit(newAppCtx(os.Args[1:], os.Stdout, os.Stderr, nil).run())
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	os.Exit(newAppCtx(os.Args[1:], os.Stdout, os.Stderr, nil).run(ctx))
 }

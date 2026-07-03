@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -63,7 +64,10 @@ func TestDefaultMetricsEndpoint(t *testing.T) {
 
 	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l.logger)
 
-	go app.run()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	go app.run(ctx)
 
 	resp, err := http.Get("http://" + l.addr() + "/metrics")
 	if err != nil {
@@ -97,8 +101,6 @@ func TestDefaultMetricsEndpoint(t *testing.T) {
 	if !strings.Contains(body, "# HELP go_gc_duration_seconds") {
 		t.Errorf("Want response body to contains '# HELP go_gc_duration_seconds'. But found none in:\n%s", body)
 	}
-
-	app.sigs <- os.Interrupt
 }
 
 func TestCustomMetricsEndpoint(t *testing.T) {
@@ -108,7 +110,10 @@ func TestCustomMetricsEndpoint(t *testing.T) {
 
 	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l.logger)
 
-	go app.run()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	go app.run(ctx)
 
 	resp, err := http.Get("http://" + l.addr() + "/telemetry")
 	if err != nil {
@@ -132,8 +137,6 @@ func TestCustomMetricsEndpoint(t *testing.T) {
 	if !strings.HasPrefix(string(responseBody), "# HELP") {
 		t.Errorf("Want response body to have prefix '# HELP'. But found none in:\n%s", string(responseBody))
 	}
-
-	app.sigs <- os.Interrupt
 }
 
 func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
@@ -143,7 +146,10 @@ func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 
 	app := newAppCtx([]string{"--web.listen-address=:0", configArg}, os.Stdout, os.Stderr, l.logger)
 
-	go app.run()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	go app.run(ctx)
 
 	resp, err := http.Get("http://" + l.addr() + "/")
 	if err != nil {
@@ -167,8 +173,6 @@ func TestLandingPageDefaultMetricsEndpoint(t *testing.T) {
 	if !strings.Contains(string(responseBody), "<a href='/metrics'>Metrics</a>") {
 		t.Errorf("Want link to default metrics endpoint. But found none in:\n%s", string(responseBody))
 	}
-
-	app.sigs <- os.Interrupt
 }
 
 func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
@@ -178,7 +182,10 @@ func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 
 	app := newAppCtx([]string{"--web.listen-address=:0", "--web.telemetry-path=/telemetry", configArg}, os.Stdout, os.Stderr, l.logger)
 
-	go app.run()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	go app.run(ctx)
 
 	resp, err := http.Get("http://" + l.addr() + "/")
 	if err != nil {
@@ -202,8 +209,6 @@ func TestLandingPageCustomMetricsEndpoint(t *testing.T) {
 	if !strings.Contains(string(responseBody), "<a href='/telemetry'>Metrics</a>") {
 		t.Errorf("Want link to custom metrics endpoint. But found none in:\n%s", string(responseBody))
 	}
-
-	app.sigs <- os.Interrupt
 }
 
 func TestBuildInfoMetric(t *testing.T) {
@@ -213,7 +218,10 @@ func TestBuildInfoMetric(t *testing.T) {
 
 	app := newAppCtx([]string{"--web.listen-address=127.0.0.1:0", configArg}, os.Stdout, os.Stderr, l.logger)
 
-	go app.run()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	go app.run(ctx)
 
 	resp, err := http.Get("http://" + l.addr() + "/metrics")
 	if err != nil {
@@ -245,6 +253,4 @@ func TestBuildInfoMetric(t *testing.T) {
 	if !goBuildInfo.MatchString(body) {
 		t.Errorf("Want response body to contains RegEx '%s'. But found none in:\n%s", goBuildInfo.String(), body)
 	}
-
-	app.sigs <- os.Interrupt
 }
