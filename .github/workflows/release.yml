@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Container Image
         id: build-image
-        uses: redhat-actions/buildah-build@v2
+        uses: redhat-actions/buildah-build@v3
         with:
           image: mq_exporter
           tags: ${{ env.CONTAINER_TAGS }}
